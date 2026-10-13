@@ -5,6 +5,8 @@ import android.app.AlertDialog
 import android.app.DownloadManager
 import android.content.Context
 import android.graphics.Color
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -20,6 +22,7 @@ import android.webkit.WebViewClient
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import org.json.JSONArray
@@ -33,7 +36,6 @@ class MainActivity : Activity() {
     private lateinit var root: LinearLayout
     private lateinit var address: EditText
     private lateinit var pageHost: FrameLayout
-    private lateinit var tabLabel: TextView
     private val tabs = mutableListOf<WebView>()
     private val tabUrls = mutableListOf<String>()
     private var activeTab = 0
@@ -133,14 +135,14 @@ class MainActivity : Activity() {
         val view = createWebView()
         tabs.add(view); tabUrls.add(url); activeTab = tabs.lastIndex
         pageHost.removeAllViews(); pageHost.addView(view, FrameLayout.LayoutParams(-1, -1))
-        tabLabel.text = tabs.size.toString(); view.loadUrl(url)
+        view.loadUrl(url)
     }
 
     private fun switchTab(index: Int) {
         if (index !in tabs.indices) return
         activeTab = index; pageHost.removeAllViews()
         pageHost.addView(web, FrameLayout.LayoutParams(-1, -1))
-        address.setText(web.url ?: ""); tabLabel.text = tabs.size.toString()
+        address.setText(web.url ?: "")
     }
 
     private fun navigate(input: String) {
@@ -248,16 +250,27 @@ class MainActivity : Activity() {
             }, LinearLayout.LayoutParams(dp(30), dp(32)))
             card.addView(cardHeader)
             val preview = FrameLayout(this).apply {
-                setBackgroundColor(Color.rgb(248, 250, 253))
+                setBackgroundColor(Color.WHITE)
                 setOnClickListener { switchTab(index); tabsDialog?.dismiss() }
             }
-            val previewLabel = TextView(this).apply {
-                text = "🌐"
-                textSize = 30f
-                gravity = Gravity.CENTER
-                setTextColor(blue)
+            // Chrome's tab grid uses a snapshot of each page, not a generic globe.
+            val thumbnail = ImageView(this).apply {
+                scaleType = ImageView.ScaleType.CENTER_CROP
+                contentDescription = "תצוגה מקדימה של הכרטיסייה"
+                setBackgroundColor(Color.WHITE)
+                try {
+                    val sourceWidth = view.width.coerceAtLeast(dp(160))
+                    val sourceHeight = view.height.coerceAtLeast(dp(240))
+                    val bitmap = Bitmap.createBitmap(sourceWidth, sourceHeight, Bitmap.Config.ARGB_8888)
+                    view.draw(Canvas(bitmap))
+                    setImageBitmap(Bitmap.createScaledBitmap(bitmap, dp(240), dp(150), true))
+                    bitmap.recycle()
+                } catch (_: Exception) {
+                    setBackgroundColor(Color.rgb(248, 250, 253))
+                }
+                setOnClickListener { switchTab(index); tabsDialog?.dismiss() }
             }
-            preview.addView(previewLabel, FrameLayout.LayoutParams(-1, -1))
+            preview.addView(thumbnail, FrameLayout.LayoutParams(-1, -1))
             card.addView(preview, LinearLayout.LayoutParams(-1, dp(108)))
             card.setOnClickListener { switchTab(index); tabsDialog?.dismiss() }
             val params = android.widget.GridLayout.LayoutParams().apply {
