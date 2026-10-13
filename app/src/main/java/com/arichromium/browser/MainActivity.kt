@@ -36,6 +36,9 @@ class MainActivity : Activity() {
     private lateinit var root: LinearLayout
     private lateinit var address: EditText
     private lateinit var tabSwitcherButton: TextView
+    private lateinit var backButton: TextView
+    private lateinit var forwardButton: TextView
+    private lateinit var reloadButton: TextView
     private lateinit var progressBar: android.widget.ProgressBar
     private lateinit var pageHost: FrameLayout
     private val tabs = mutableListOf<WebView>()
@@ -86,8 +89,20 @@ class MainActivity : Activity() {
                 } else false
             }
         }
+        backButton = button("→") { if (web.canGoBack()) web.goBack() }.apply {
+            contentDescription = "חזרה"; textSize = 21f
+        }
+        nav.addView(backButton, LinearLayout.LayoutParams(dp(34), dp(42)))
+        forwardButton = button("←") { if (web.canGoForward()) web.goForward() }.apply {
+            contentDescription = "קדימה"; textSize = 21f
+        }
+        nav.addView(forwardButton, LinearLayout.LayoutParams(dp(34), dp(42)))
+        reloadButton = button("↻") { web.reload() }.apply {
+            contentDescription = "רענון"; textSize = 22f
+        }
+        nav.addView(reloadButton, LinearLayout.LayoutParams(dp(34), dp(42)))
         nav.addView(address, LinearLayout.LayoutParams(0, dp(42), 1f))
-        nav.addView(button("+") { addTab("https://duckduckgo.com") }, LinearLayout.LayoutParams(dp(38), dp(42)))
+        nav.addView(button("+") { addTab("https://duckduckgo.com") }, LinearLayout.LayoutParams(dp(34), dp(42)))
         tabSwitcherButton = button("1") { showTabs() }.apply {
             textSize = 14f
             background = android.graphics.drawable.GradientDrawable().apply {
@@ -161,7 +176,10 @@ class MainActivity : Activity() {
             }
 
             override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
-                if (view === web) address.setText(url)
+                if (view === web) {
+                    address.setText(url)
+                    updateNavigationButtons()
+                }
             }
             override fun onPageFinished(view: WebView, url: String) {
                 if (view === web) address.setText(url)
@@ -170,6 +188,7 @@ class MainActivity : Activity() {
                     addHistory(title, url)
                     if (activeTab in tabUrls.indices) tabUrls[activeTab] = url
                 }
+                if (view === web) updateNavigationButtons()
             }
         }
         webChromeClient = object : WebChromeClient() {
@@ -215,6 +234,23 @@ class MainActivity : Activity() {
         if (::tabSwitcherButton.isInitialized) {
             tabSwitcherButton.text = tabs.size.toString()
             tabSwitcherButton.contentDescription = "כרטיסיות פתוחות: " + tabs.size
+        }
+        updateNavigationButtons()
+    }
+
+    private fun updateNavigationButtons() {
+        if (tabs.isEmpty()) return
+        if (::backButton.isInitialized) {
+            backButton.isEnabled = web.canGoBack()
+            backButton.alpha = if (backButton.isEnabled) 1f else 0.38f
+        }
+        if (::forwardButton.isInitialized) {
+            forwardButton.isEnabled = web.canGoForward()
+            forwardButton.alpha = if (forwardButton.isEnabled) 1f else 0.38f
+        }
+        if (::reloadButton.isInitialized) {
+            reloadButton.isEnabled = true
+            reloadButton.alpha = 1f
         }
     }
 
