@@ -49,7 +49,7 @@ class MainActivity : Activity() {
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
         loadSavedData()
         buildChromeUi()
-        addTab("https://www.google.com")
+        addTab("https://duckduckgo.com")
     }
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
@@ -104,7 +104,7 @@ class MainActivity : Activity() {
             setOnClickListener { showTabs() }
         }
         actions.addView(tabLabel, LinearLayout.LayoutParams(dp(42), dp(34)))
-        actions.addView(button("+") { addTab("https://www.google.com") }, LinearLayout.LayoutParams(dp(56), dp(42)))
+        actions.addView(button("+") { addTab("https://duckduckgo.com") }, LinearLayout.LayoutParams(dp(56), dp(42)))
         actions.addView(button("⋮") { showMenu() }, LinearLayout.LayoutParams(dp(56), dp(42)))
         root.addView(actions)
         pageHost = FrameLayout(this)
@@ -169,18 +169,18 @@ class MainActivity : Activity() {
         val url = when {
             value.startsWith("https://") || value.startsWith("http://") -> value
             value.contains(".") && !value.contains(" ") -> "https://" + value
-            else -> "https://www.google.com/search?q=" + URLEncoder.encode(value, "UTF-8")
+            else -> "https://duckduckgo.com/?q=" + URLEncoder.encode(value, "UTF-8")
         }
         web.loadUrl(url)
     }
 
-    private fun showHome() = web.loadUrl("https://www.google.com")
+    private fun showHome() = web.loadUrl("https://duckduckgo.com")
 
     private fun showMenu() {
         val options = arrayOf("כרטיסייה חדשה", "היסטוריה", "הורדות", "תרגם לעברית", "סימניות", "הגדרות")
         AlertDialog.Builder(this).setItems(options) { _, which ->
             when (which) {
-                0 -> addTab("https://www.google.com")
+                0 -> addTab("https://duckduckgo.com")
                 1 -> showHistory()
                 2 -> showDownloads()
                 3 -> translatePage()
@@ -198,7 +198,7 @@ class MainActivity : Activity() {
     private fun showTabs() {
         val labels = tabs.mapIndexed { i, view -> (i + 1).toString() + ". " + (view.title?.takeIf { it.isNotBlank() } ?: tabUrls.getOrElse(i) { "כרטיסייה" }) }.toTypedArray()
         AlertDialog.Builder(this).setTitle("כרטיסיות פתוחות").setItems(labels) { _, which -> switchTab(which) }
-            .setPositiveButton("כרטיסייה חדשה") { _, _ -> addTab("https://www.google.com") }
+            .setPositiveButton("כרטיסייה חדשה") { _, _ -> addTab("https://duckduckgo.com") }
             .setNegativeButton("סגור כרטיסייה") { _, _ ->
                 if (tabs.size > 1) {
                     tabs[activeTab].destroy(); tabs.removeAt(activeTab); tabUrls.removeAt(activeTab)
@@ -236,7 +236,7 @@ class MainActivity : Activity() {
     }
 
     private fun showSettings() {
-        val choices = arrayOf("נקה נתוני גלישה", "פתח את Google", "מידע על הדפדפן")
+        val choices = arrayOf("נקה נתוני גלישה", "פתח את מנוע החיפוש", "מידע על הדפדפן")
         AlertDialog.Builder(this).setTitle("הגדרות").setItems(choices) { _, which ->
             when (which) {
                 0 -> AlertDialog.Builder(this).setMessage("למחוק את היסטוריית הגלישה המקומית?")
