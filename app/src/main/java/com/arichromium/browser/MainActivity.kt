@@ -66,9 +66,12 @@ class MainActivity : Activity() {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(4), dp(4), dp(4), dp(4)); setBackgroundColor(Color.WHITE)
         }
-        nav.addView(button("‹") { if (web.canGoBack()) web.goBack() })
-        nav.addView(button("›") { if (web.canGoForward()) web.goForward() })
-        nav.addView(button("↻") { web.reload() })
+        nav.layoutDirection = View.LAYOUT_DIRECTION_RTL
+        val homeButton = button("⌂") { showHome() }.apply {
+            contentDescription = "דף הבית"
+            setTextColor(blue)
+        }
+        nav.addView(homeButton, LinearLayout.LayoutParams(dp(42), dp(42)))
         address = EditText(this).apply {
             textSize = 14f; isSingleLine = true; hint = "חיפוש או הקלדת כתובת"
             setTextColor(ink); setHintTextColor(Color.GRAY); setPadding(dp(12), 0, dp(12), 0)
@@ -83,14 +86,16 @@ class MainActivity : Activity() {
             }
         }
         nav.addView(address, LinearLayout.LayoutParams(0, dp(42), 1f))
-        nav.addView(button("↵") { navigate(address.text.toString()) })
+        nav.addView(button("↻") { web.reload() }, LinearLayout.LayoutParams(dp(40), dp(42)))
+        nav.addView(button("‹") { if (web.canGoBack()) web.goBack() }, LinearLayout.LayoutParams(dp(40), dp(42)))
+        nav.addView(button("›") { if (web.canGoForward()) web.goForward() }, LinearLayout.LayoutParams(dp(40), dp(42)))
         root.addView(nav)
 
         val actions = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
             setPadding(dp(8), 0, dp(8), dp(3)); setBackgroundColor(Color.WHITE)
         }
-        actions.addView(button("⌂") { showHome() }, LinearLayout.LayoutParams(0, dp(42), 1f))
         tabLabel = TextView(this).apply {
             text = "1"; textSize = 14f; gravity = Gravity.CENTER; setTextColor(ink)
             background = android.graphics.drawable.GradientDrawable().apply {
@@ -98,9 +103,9 @@ class MainActivity : Activity() {
             }
             setOnClickListener { showTabs() }
         }
-        actions.addView(tabLabel, LinearLayout.LayoutParams(dp(34), dp(30)))
-        actions.addView(button("+") { addTab("https://www.google.com") }, LinearLayout.LayoutParams(0, dp(42), 1f))
-        actions.addView(button("⋮") { showMenu() }, LinearLayout.LayoutParams(0, dp(42), 1f))
+        actions.addView(tabLabel, LinearLayout.LayoutParams(dp(42), dp(34)))
+        actions.addView(button("+") { addTab("https://www.google.com") }, LinearLayout.LayoutParams(dp(56), dp(42)))
+        actions.addView(button("⋮") { showMenu() }, LinearLayout.LayoutParams(dp(56), dp(42)))
         root.addView(actions)
         pageHost = FrameLayout(this)
         root.addView(pageHost, LinearLayout.LayoutParams(-1, 0, 1f))
