@@ -66,12 +66,11 @@ class MainActivity : Activity() {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(4), dp(4), dp(4), dp(4)); setBackgroundColor(Color.WHITE)
         }
-        nav.layoutDirection = View.LAYOUT_DIRECTION_RTL
-        val homeButton = button("⌂") { showHome() }.apply {
-            contentDescription = "דף הבית"
-            setTextColor(blue)
-        }
-        nav.addView(homeButton, LinearLayout.LayoutParams(dp(42), dp(42)))
+        // Keep the toolbar's physical order explicit: home stays at the far right in Hebrew UI.
+        nav.layoutDirection = View.LAYOUT_DIRECTION_LTR
+        nav.addView(button("›") { if (web.canGoForward()) web.goForward() }, LinearLayout.LayoutParams(dp(40), dp(42)))
+        nav.addView(button("‹") { if (web.canGoBack()) web.goBack() }, LinearLayout.LayoutParams(dp(40), dp(42)))
+        nav.addView(button("↻") { web.reload() }, LinearLayout.LayoutParams(dp(40), dp(42)))
         address = EditText(this).apply {
             textSize = 14f; isSingleLine = true; hint = "חיפוש או הקלדת כתובת"
             setTextColor(ink); setHintTextColor(Color.GRAY); setPadding(dp(12), 0, dp(12), 0)
@@ -86,9 +85,11 @@ class MainActivity : Activity() {
             }
         }
         nav.addView(address, LinearLayout.LayoutParams(0, dp(42), 1f))
-        nav.addView(button("↻") { web.reload() }, LinearLayout.LayoutParams(dp(40), dp(42)))
-        nav.addView(button("‹") { if (web.canGoBack()) web.goBack() }, LinearLayout.LayoutParams(dp(40), dp(42)))
-        nav.addView(button("›") { if (web.canGoForward()) web.goForward() }, LinearLayout.LayoutParams(dp(40), dp(42)))
+        val homeButton = button("⌂") { showHome() }.apply {
+            contentDescription = "דף הבית"
+            setTextColor(blue)
+        }
+        nav.addView(homeButton, LinearLayout.LayoutParams(dp(42), dp(42)))
         root.addView(nav)
 
         val actions = LinearLayout(this).apply {
