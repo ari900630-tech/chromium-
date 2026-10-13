@@ -134,6 +134,8 @@ class MainActivity : Activity() {
     private fun createWebView(): WebView = WebView(this).apply {
         setBackgroundColor(Color.WHITE)
         settings.javaScriptEnabled = true
+        settings.javaScriptCanOpenWindowsAutomatically = true
+        settings.setSupportMultipleWindows(false)
         settings.domStorageEnabled = true
         settings.loadsImagesAutomatically = true
         settings.useWideViewPort = true
