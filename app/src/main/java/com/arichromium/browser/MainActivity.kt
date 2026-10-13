@@ -35,6 +35,8 @@ class MainActivity : Activity() {
     private val pale = Color.rgb(241, 243, 244)
     private lateinit var root: LinearLayout
     private lateinit var address: EditText
+    private lateinit var tabSwitcherButton: TextView
+    private lateinit var progressBar: android.widget.ProgressBar
     private lateinit var pageHost: FrameLayout
     private val tabs = mutableListOf<WebView>()
     private val tabUrls = mutableListOf<String>()
@@ -69,10 +71,8 @@ class MainActivity : Activity() {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(4), dp(4), dp(4), dp(4)); setBackgroundColor(Color.WHITE)
         }
-        // Browser actions stay on the physical left; the address field fills the remaining space.
+        // Chrome-inspired phone toolbar: address field first, then tab count and menu on the right.
         nav.layoutDirection = View.LAYOUT_DIRECTION_LTR
-        nav.addView(button("⋮") { showMenu() }, LinearLayout.LayoutParams(dp(40), dp(42)))
-        nav.addView(button("+") { addTab("https://duckduckgo.com"); showTabs() }, LinearLayout.LayoutParams(dp(40), dp(42)))
         address = EditText(this).apply {
             textSize = 14f; isSingleLine = true; hint = "חיפוש או הקלדת כתובת"
             setTextColor(ink); setHintTextColor(Color.GRAY); setPadding(dp(12), 0, dp(12), 0)
@@ -87,7 +87,29 @@ class MainActivity : Activity() {
             }
         }
         nav.addView(address, LinearLayout.LayoutParams(0, dp(42), 1f))
+        nav.addView(button("+") { addTab("https://duckduckgo.com") }, LinearLayout.LayoutParams(dp(38), dp(42)))
+        tabSwitcherButton = button("1") { showTabs() }.apply {
+            textSize = 14f
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(Color.WHITE)
+                setStroke(dp(1), Color.rgb(218, 220, 224))
+                cornerRadius = dp(8).toFloat()
+            }
+            contentDescription = "כרטיסיות פתוחות"
+        }
+        nav.addView(tabSwitcherButton, LinearLayout.LayoutParams(dp(34), dp(34)).apply {
+            setMargins(dp(2), 0, dp(2), 0)
+        })
+        nav.addView(button("⋮") { showMenu() }, LinearLayout.LayoutParams(dp(38), dp(42)))
         root.addView(nav)
+
+        progressBar = android.widget.ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+            max = 100
+            progress = 0
+            progressTintList = android.content.res.ColorStateList.valueOf(blue)
+            visibility = View.GONE
+        }
+        root.addView(progressBar, LinearLayout.LayoutParams(-1, dp(2)))
 
         pageHost = FrameLayout(this)
         root.addView(pageHost, LinearLayout.LayoutParams(-1, 0, 1f))
@@ -115,7 +137,14 @@ class MainActivity : Activity() {
                 }
             }
         }
-        webChromeClient = WebChromeClient()
+        webChromeClient = object : WebChromeClient() {
+            override fun onProgressChanged(view: WebView, newProgress: Int) {
+                if (view === web) {
+                    progressBar.progress = newProgress
+                    progressBar.visibility = if (newProgress in 1..99) View.VISIBLE else View.GONE
+                }
+            }
+        }
         setDownloadListener { url, userAgent, _, mimeType, _ ->
             try {
                 val fileName = Uri.parse(url).lastPathSegment?.takeIf { it.isNotBlank() } ?: "download"
@@ -134,6 +163,7 @@ class MainActivity : Activity() {
     private fun addTab(url: String) {
         val view = createWebView()
         tabs.add(view); tabUrls.add(url); activeTab = tabs.lastIndex
+        updateTabSwitcherCount()
         pageHost.removeAllViews(); pageHost.addView(view, FrameLayout.LayoutParams(-1, -1))
         view.loadUrl(url)
     }
@@ -143,6 +173,14 @@ class MainActivity : Activity() {
         activeTab = index; pageHost.removeAllViews()
         pageHost.addView(web, FrameLayout.LayoutParams(-1, -1))
         address.setText(web.url ?: "")
+        updateTabSwitcherCount()
+    }
+
+    private fun updateTabSwitcherCount() {
+        if (::tabSwitcherButton.isInitialized) {
+            tabSwitcherButton.text = tabs.size.toString()
+            tabSwitcherButton.contentDescription = "כרטיסיות פתוחות: " + tabs.size
+        }
     }
 
     private fun navigate(input: String) {
@@ -235,6 +273,7 @@ class MainActivity : Activity() {
                     val wasActive = index == activeTab
                     view.stopLoading(); view.destroy()
                     tabs.removeAt(index); tabUrls.removeAt(index)
+                    updateTabSwitcherCount()
                     if (wasActive) activeTab = index.coerceAtMost(tabs.lastIndex)
                     else if (index < activeTab) activeTab--
                     switchTab(activeTab)
