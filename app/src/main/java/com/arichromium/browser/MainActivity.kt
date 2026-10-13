@@ -211,6 +211,7 @@ class MainActivity : Activity() {
             text = "כרטיסיות"; textSize = 22f; setTextColor(ink)
         }, LinearLayout.LayoutParams(0, dp(48), 1f))
         header.addView(button("+ כרטיסייה חדשה") {
+            tabsDialog?.dismiss()
             addTab("https://duckduckgo.com")
             showTabs()
         }.apply {
@@ -243,6 +244,7 @@ class MainActivity : Activity() {
                     if (wasActive) activeTab = index.coerceAtMost(tabs.lastIndex)
                     else if (index < activeTab) activeTab--
                     switchTab(activeTab)
+                    tabsDialog?.dismiss()
                     showTabs()
                 } else {
                     view.loadUrl("https://duckduckgo.com")
