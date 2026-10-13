@@ -70,7 +70,7 @@ class MainActivity : Activity() {
         nav.addView(button("›") { if (web.canGoForward()) web.goForward() })
         nav.addView(button("↻") { web.reload() })
         address = EditText(this).apply {
-            textSize = 14f; singleLine = true; hint = "חיפוש או הקלדת כתובת"
+            textSize = 14f; isSingleLine = true; hint = "חיפוש או הקלדת כתובת"
             setTextColor(ink); setHintTextColor(Color.GRAY); setPadding(dp(12), 0, dp(12), 0)
             background = android.graphics.drawable.GradientDrawable().apply { setColor(pale); cornerRadius = dp(24).toFloat() }
             imeOptions = EditorInfo.IME_ACTION_GO
