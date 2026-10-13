@@ -71,7 +71,6 @@ class MainActivity : Activity() {
         nav.layoutDirection = View.LAYOUT_DIRECTION_LTR
         nav.addView(button("⋮") { showMenu() }, LinearLayout.LayoutParams(dp(40), dp(42)))
         nav.addView(button("+") { addTab("https://duckduckgo.com"); showTabs() }, LinearLayout.LayoutParams(dp(40), dp(42)))
-        nav.addView(button("↻") { web.reload() }, LinearLayout.LayoutParams(dp(36), dp(42)))
         address = EditText(this).apply {
             textSize = 14f; isSingleLine = true; hint = "חיפוש או הקלדת כתובת"
             setTextColor(ink); setHintTextColor(Color.GRAY); setPadding(dp(12), 0, dp(12), 0)
