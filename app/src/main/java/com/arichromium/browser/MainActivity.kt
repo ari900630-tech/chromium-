@@ -72,7 +72,7 @@ class MainActivity : Activity() {
             setPadding(dp(4), dp(4), dp(4), dp(4)); setBackgroundColor(Color.WHITE)
         }
         // Chrome-inspired phone toolbar: address field first, then tab count and menu on the right.
-        nav.layoutDirection = View.LAYOUT_DIRECTION_LTR
+        nav.layoutDirection = View.LAYOUT_DIRECTION_RTL
         address = EditText(this).apply {
             textSize = 14f; isSingleLine = true; hint = "חיפוש או הקלדת כתובת"
             setTextColor(ink); setHintTextColor(Color.GRAY); setPadding(dp(12), 0, dp(12), 0)
@@ -125,6 +125,43 @@ class MainActivity : Activity() {
         settings.loadWithOverviewMode = true
         CookieManager.getInstance().setAcceptCookie(true)
         webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView, request: android.webkit.WebResourceRequest): Boolean {
+                val target = request.url
+                val scheme = target.scheme?.lowercase()
+                if (scheme == "http" || scheme == "https") {
+                    view.loadUrl(target.toString())
+                    return true
+                }
+                if (scheme == "mailto" || scheme == "tel") {
+                    try {
+                        startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, target))
+                    } catch (_: Exception) {
+                        toast("לא ניתן לפתוח את הקישור הזה")
+                    }
+                    return true
+                }
+                return true
+            }
+
+            @Suppress("DEPRECATION")
+            override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
+                val target = Uri.parse(url)
+                val scheme = target.scheme?.lowercase()
+                if (scheme == "http" || scheme == "https") {
+                    view.loadUrl(url)
+                    return true
+                }
+                if (scheme == "mailto" || scheme == "tel") {
+                    try {
+                        startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, target))
+                    } catch (_: Exception) {
+                        toast("לא ניתן לפתוח את הקישור הזה")
+                    }
+                    return true
+                }
+                return true
+            }
+
             override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
                 if (view === web) address.setText(url)
             }
