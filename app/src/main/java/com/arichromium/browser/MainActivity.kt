@@ -188,7 +188,8 @@ class MainActivity : Activity() {
                 if (url.startsWith("http")) {
                     val title = view.title?.takeIf { it.isNotBlank() } ?: url
                     addHistory(title, url)
-                    if (activeTab in tabUrls.indices) tabUrls[activeTab] = url
+                    val tabIndex = tabs.indexOf(view)
+                    if (tabIndex in tabUrls.indices) tabUrls[tabIndex] = url
                 }
                 if (view === web) updateNavigationButtons()
             }
