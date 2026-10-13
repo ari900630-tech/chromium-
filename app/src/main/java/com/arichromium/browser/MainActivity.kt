@@ -25,6 +25,7 @@ import android.widget.LinearLayout
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import android.widget.PopupWindow
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URLEncoder
@@ -45,6 +46,7 @@ class MainActivity : Activity() {
     private val tabUrls = mutableListOf<String>()
     private var activeTab = 0
     private var tabsDialog: AlertDialog? = null
+    private var menuPopup: PopupWindow? = null
     private val prefs by lazy { getSharedPreferences("browser", Context.MODE_PRIVATE) }
     private val history = mutableListOf<Pair<String, String>>()
     private val downloads = mutableListOf<String>()
@@ -97,7 +99,10 @@ class MainActivity : Activity() {
         }
         // In RTL, the first child is placed at the far right: menu, tabs, new tab,
         // address, reload, forward, back — reverse of the old toolbar order.
-        nav.addView(button("⋮") { showMenu() }, LinearLayout.LayoutParams(dp(38), dp(42)))
+        val menuButton = button("⋮") { }
+        menuButton.contentDescription = "תפריט"
+        menuButton.setOnClickListener { showMenu(menuButton) }
+        nav.addView(menuButton, LinearLayout.LayoutParams(dp(38), dp(42)))
         tabSwitcherButton = button("1") { showTabs() }.apply {
             textSize = 14f
             background = android.graphics.drawable.GradientDrawable().apply {
@@ -284,20 +289,62 @@ class MainActivity : Activity() {
 
     private fun showHome() = web.loadUrl("https://duckduckgo.com")
 
-    private fun showMenu() {
-        val options = arrayOf("כרטיסייה חדשה", "היסטוריה", "הורדות", "תרגם לעברית", "סימניות", "הגדרות")
-        AlertDialog.Builder(this).setItems(options) { _, which ->
-            when (which) {
-                0 -> addTab("https://duckduckgo.com")
-                1 -> showHistory()
-                2 -> showDownloads()
-                3 -> translatePage()
-                4 -> showBookmarks()
-                5 -> showSettings()
+    private fun showMenu(anchor: View) {
+        menuPopup?.dismiss()
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            setPadding(0, dp(6), 0, dp(6))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(Color.WHITE)
+                cornerRadius = dp(16).toFloat()
+                setStroke(dp(1), Color.rgb(232, 234, 237))
             }
-        }.show()
+            elevation = dp(10).toFloat()
+        }
+        fun addRow(icon: String, label: String, action: () -> Unit) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                layoutDirection = View.LAYOUT_DIRECTION_RTL
+                setPadding(dp(16), 0, dp(18), 0)
+                isClickable = true
+                isFocusable = true
+                setBackgroundResource(android.R.drawable.list_selector_background)
+                setOnClickListener { menuPopup?.dismiss(); action() }
+            }
+            row.addView(TextView(this).apply {
+                text = icon; textSize = 20f; gravity = Gravity.CENTER
+                setTextColor(Color.rgb(95, 99, 104))
+            }, LinearLayout.LayoutParams(dp(34), -1))
+            row.addView(TextView(this).apply {
+                text = label; textSize = 15f
+                gravity = Gravity.CENTER_VERTICAL or Gravity.RIGHT
+                setTextColor(ink); setPadding(dp(12), 0, 0, 0)
+            }, LinearLayout.LayoutParams(0, -1, 1f))
+            panel.addView(row, LinearLayout.LayoutParams(-1, dp(48)))
+        }
+        fun addDivider() {
+            panel.addView(View(this).apply { setBackgroundColor(Color.rgb(232, 234, 237)) },
+                LinearLayout.LayoutParams(-1, dp(1)).apply {
+                    setMargins(dp(14), dp(5), dp(14), dp(5))
+                })
+        }
+        addRow("＋", "כרטיסייה חדשה") { addTab("https://duckduckgo.com") }
+        addRow("☆", "סימניות") { showBookmarks() }
+        addRow("◷", "היסטוריה") { showHistory() }
+        addRow("↓", "הורדות") { showDownloads() }
+        addDivider()
+        addRow("文", "תרגם לעברית") { translatePage() }
+        addDivider()
+        addRow("⚙", "הגדרות") { showSettings() }
+        menuPopup = PopupWindow(panel, dp(280), ViewGroup.LayoutParams.WRAP_CONTENT, true).apply {
+            isOutsideTouchable = true
+            setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT))
+            elevation = dp(12).toFloat()
+        }
+        menuPopup?.showAsDropDown(anchor, -dp(242), 0)
     }
-
     private fun translatePage() {
         val url = web.url ?: return
         web.loadUrl("https://translate.google.com/translate?sl=auto&tl=iw&u=" + URLEncoder.encode(url, "UTF-8"))
