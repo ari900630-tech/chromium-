@@ -87,25 +87,6 @@ class MainActivity : Activity() {
         nav.addView(address, LinearLayout.LayoutParams(0, dp(42), 1f))
         root.addView(nav)
 
-        val actions = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-            layoutDirection = View.LAYOUT_DIRECTION_RTL
-            setPadding(dp(8), 0, dp(8), dp(3)); setBackgroundColor(Color.WHITE)
-        }
-        tabLabel = TextView(this).apply {
-            text = "1"; textSize = 14f; gravity = Gravity.CENTER; setTextColor(ink)
-            background = android.graphics.drawable.GradientDrawable().apply {
-                setColor(Color.WHITE); setStroke(dp(1), ink); cornerRadius = dp(5).toFloat()
-            }
-            setOnClickListener { showTabs() }
-        }
-        tabLabel.setOnClickListener { showTabs() }
-        actions.addView(tabLabel, LinearLayout.LayoutParams(dp(42), dp(34)))
-        actions.addView(TextView(this).apply {
-            text = "כרטיסיות פתוחות"; textSize = 12f; setTextColor(Color.GRAY)
-            gravity = Gravity.CENTER_VERTICAL; setPadding(dp(8), 0, dp(8), 0)
-        }, LinearLayout.LayoutParams(-2, dp(34)))
-        root.addView(actions)
         pageHost = FrameLayout(this)
         root.addView(pageHost, LinearLayout.LayoutParams(-1, 0, 1f))
         setContentView(root)
