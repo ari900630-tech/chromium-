@@ -37,6 +37,7 @@ class MainActivity : Activity() {
     private val tabs = mutableListOf<WebView>()
     private val tabUrls = mutableListOf<String>()
     private var activeTab = 0
+    private var tabsDialog: AlertDialog? = null
     private val prefs by lazy { getSharedPreferences("browser", Context.MODE_PRIVATE) }
     private val history = mutableListOf<Pair<String, String>>()
     private val downloads = mutableListOf<String>()
@@ -66,11 +67,13 @@ class MainActivity : Activity() {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(4), dp(4), dp(4), dp(4)); setBackgroundColor(Color.WHITE)
         }
-        // Keep the toolbar's physical order explicit: home stays at the far right in Hebrew UI.
+        // Browser actions stay on the physical left; the address field fills the remaining space.
         nav.layoutDirection = View.LAYOUT_DIRECTION_LTR
-        nav.addView(button("›") { if (web.canGoForward()) web.goForward() }, LinearLayout.LayoutParams(dp(40), dp(42)))
-        nav.addView(button("‹") { if (web.canGoBack()) web.goBack() }, LinearLayout.LayoutParams(dp(40), dp(42)))
-        nav.addView(button("↻") { web.reload() }, LinearLayout.LayoutParams(dp(40), dp(42)))
+        nav.addView(button("⋮") { showMenu() }, LinearLayout.LayoutParams(dp(40), dp(42)))
+        nav.addView(button("+") { addTab("https://duckduckgo.com"); showTabs() }, LinearLayout.LayoutParams(dp(40), dp(42)))
+        nav.addView(button("›") { if (web.canGoForward()) web.goForward() }, LinearLayout.LayoutParams(dp(36), dp(42)))
+        nav.addView(button("‹") { if (web.canGoBack()) web.goBack() }, LinearLayout.LayoutParams(dp(36), dp(42)))
+        nav.addView(button("↻") { web.reload() }, LinearLayout.LayoutParams(dp(36), dp(42)))
         address = EditText(this).apply {
             textSize = 14f; isSingleLine = true; hint = "חיפוש או הקלדת כתובת"
             setTextColor(ink); setHintTextColor(Color.GRAY); setPadding(dp(12), 0, dp(12), 0)
@@ -85,11 +88,6 @@ class MainActivity : Activity() {
             }
         }
         nav.addView(address, LinearLayout.LayoutParams(0, dp(42), 1f))
-        val homeButton = button("⌂") { showHome() }.apply {
-            contentDescription = "דף הבית"
-            setTextColor(blue)
-        }
-        nav.addView(homeButton, LinearLayout.LayoutParams(dp(42), dp(42)))
         root.addView(nav)
 
         val actions = LinearLayout(this).apply {
@@ -104,9 +102,12 @@ class MainActivity : Activity() {
             }
             setOnClickListener { showTabs() }
         }
+        tabLabel.setOnClickListener { showTabs() }
         actions.addView(tabLabel, LinearLayout.LayoutParams(dp(42), dp(34)))
-        actions.addView(button("+") { addTab("https://duckduckgo.com") }, LinearLayout.LayoutParams(dp(56), dp(42)))
-        actions.addView(button("⋮") { showMenu() }, LinearLayout.LayoutParams(dp(56), dp(42)))
+        actions.addView(TextView(this).apply {
+            text = "כרטיסיות פתוחות"; textSize = 12f; setTextColor(Color.GRAY)
+            gravity = Gravity.CENTER_VERTICAL; setPadding(dp(8), 0, dp(8), 0)
+        }, LinearLayout.LayoutParams(-2, dp(34)))
         root.addView(actions)
         pageHost = FrameLayout(this)
         root.addView(pageHost, LinearLayout.LayoutParams(-1, 0, 1f))
@@ -197,15 +198,70 @@ class MainActivity : Activity() {
     }
 
     private fun showTabs() {
-        val labels = tabs.mapIndexed { i, view -> (i + 1).toString() + ". " + (view.title?.takeIf { it.isNotBlank() } ?: tabUrls.getOrElse(i) { "כרטיסייה" }) }.toTypedArray()
-        AlertDialog.Builder(this).setTitle("כרטיסיות פתוחות").setItems(labels) { _, which -> switchTab(which) }
-            .setPositiveButton("כרטיסייה חדשה") { _, _ -> addTab("https://duckduckgo.com") }
-            .setNegativeButton("סגור כרטיסייה") { _, _ ->
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(12), dp(16), dp(12))
+            setBackgroundColor(Color.rgb(241, 243, 244))
+        }
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        header.addView(TextView(this).apply {
+            text = "כרטיסיות"; textSize = 22f; setTextColor(ink)
+        }, LinearLayout.LayoutParams(0, dp(48), 1f))
+        header.addView(button("+ כרטיסייה חדשה") {
+            addTab("https://duckduckgo.com")
+            showTabs()
+        }.apply {
+            textSize = 14f; setTextColor(blue)
+        }, LinearLayout.LayoutParams(-2, dp(48)))
+        panel.addView(header)
+        val scroll = android.widget.ScrollView(this)
+        val cards = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        tabs.forEachIndexed { index, view ->
+            val card = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(14), dp(10), dp(14), dp(10))
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(Color.WHITE)
+                    setStroke(dp(1), if (index == activeTab) blue else Color.rgb(218, 220, 224))
+                    cornerRadius = dp(16).toFloat()
+                }
+                setOnClickListener { switchTab(index); tabsDialog?.dismiss() }
+            }
+            val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+            top.addView(TextView(this).apply {
+                text = (view.title?.takeIf { it.isNotBlank() } ?: tabUrls.getOrElse(index) { "כרטיסייה חדשה" })
+                textSize = 15f; setTextColor(ink); maxLines = 1
+            }, LinearLayout.LayoutParams(0, dp(38), 1f))
+            top.addView(button("×") {
                 if (tabs.size > 1) {
-                    tabs[activeTab].destroy(); tabs.removeAt(activeTab); tabUrls.removeAt(activeTab)
-                    activeTab = (activeTab - 1).coerceAtLeast(0); switchTab(activeTab)
-                } else showHome()
-            }.show()
+                    val wasActive = index == activeTab
+                    view.stopLoading(); view.destroy()
+                    tabs.removeAt(index); tabUrls.removeAt(index)
+                    if (wasActive) activeTab = index.coerceAtMost(tabs.lastIndex)
+                    else if (index < activeTab) activeTab--
+                    switchTab(activeTab)
+                    showTabs()
+                } else {
+                    view.loadUrl("https://duckduckgo.com")
+                    tabsDialog?.dismiss()
+                }
+            }, LinearLayout.LayoutParams(dp(40), dp(38)))
+            card.addView(top)
+            card.addView(TextView(this).apply {
+                text = tabUrls.getOrElse(index) { view.url ?: "" }
+                textSize = 12f; setTextColor(Color.GRAY); maxLines = 1
+                setPadding(0, dp(3), 0, dp(3))
+            })
+            cards.addView(card, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
+        }
+        scroll.addView(cards)
+        panel.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        tabsDialog = AlertDialog.Builder(this).setView(panel).create()
+        tabsDialog?.show()
+        tabsDialog?.window?.setLayout(-1, (resources.displayMetrics.heightPixels * 0.85f).toInt())
     }
 
     private fun showHistory() {
