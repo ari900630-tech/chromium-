@@ -95,20 +95,9 @@ class MainActivity : Activity() {
                 } else false
             }
         }
-        backButton = button("→") { if (web.canGoBack()) web.goBack() }.apply {
-            contentDescription = "חזרה"; textSize = 21f
-        }
-        nav.addView(backButton, LinearLayout.LayoutParams(dp(34), dp(42)))
-        forwardButton = button("←") { if (web.canGoForward()) web.goForward() }.apply {
-            contentDescription = "קדימה"; textSize = 21f
-        }
-        nav.addView(forwardButton, LinearLayout.LayoutParams(dp(34), dp(42)))
-        reloadButton = button("↻") { web.reload() }.apply {
-            contentDescription = "רענון"; textSize = 22f
-        }
-        nav.addView(reloadButton, LinearLayout.LayoutParams(dp(34), dp(42)))
-        nav.addView(address, LinearLayout.LayoutParams(0, dp(42), 1f))
-        nav.addView(button("+") { addTab("https://duckduckgo.com") }, LinearLayout.LayoutParams(dp(34), dp(42)))
+        // In RTL, the first child is placed at the far right: menu, tabs, new tab,
+        // address, reload, forward, back — reverse of the old toolbar order.
+        nav.addView(button("⋮") { showMenu() }, LinearLayout.LayoutParams(dp(38), dp(42)))
         tabSwitcherButton = button("1") { showTabs() }.apply {
             textSize = 14f
             background = android.graphics.drawable.GradientDrawable().apply {
@@ -121,7 +110,20 @@ class MainActivity : Activity() {
         nav.addView(tabSwitcherButton, LinearLayout.LayoutParams(dp(34), dp(34)).apply {
             setMargins(dp(2), 0, dp(2), 0)
         })
-        nav.addView(button("⋮") { showMenu() }, LinearLayout.LayoutParams(dp(38), dp(42)))
+        nav.addView(button("+") { addTab("https://duckduckgo.com") }, LinearLayout.LayoutParams(dp(34), dp(42)))
+        nav.addView(address, LinearLayout.LayoutParams(0, dp(42), 1f))
+        reloadButton = button("↻") { web.reload() }.apply {
+            contentDescription = "רענון"; textSize = 22f
+        }
+        nav.addView(reloadButton, LinearLayout.LayoutParams(dp(34), dp(42)))
+        forwardButton = button("←") { if (web.canGoForward()) web.goForward() }.apply {
+            contentDescription = "קדימה"; textSize = 21f
+        }
+        nav.addView(forwardButton, LinearLayout.LayoutParams(dp(34), dp(42)))
+        backButton = button("→") { if (web.canGoBack()) web.goBack() }.apply {
+            contentDescription = "חזרה"; textSize = 21f
+        }
+        nav.addView(backButton, LinearLayout.LayoutParams(dp(34), dp(42)))
         root.addView(nav)
 
         progressBar = android.widget.ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
@@ -190,6 +192,12 @@ class MainActivity : Activity() {
                 }
             }
             override fun onPageFinished(view: WebView, url: String) {
+                // Apply Hebrew/right-to-left reading direction to page content as requested.
+                // This affects page text direction, not the browser's native toolbar.
+                view.evaluateJavascript(
+                    "(function(){try{document.documentElement.setAttribute('dir','rtl');document.documentElement.style.direction='rtl';document.body.style.direction='rtl';document.body.style.textAlign='right';var s=document.getElementById('__browser_rtl_style');if(!s){s=document.createElement('style');s.id='__browser_rtl_style';s.textContent='html,body{direction:rtl!important;text-align:right!important}';document.head.appendChild(s)}}catch(e){}})();",
+                    null
+                )
                 if (view === web) address.setText(url)
                 if (url.startsWith("http")) {
                     val title = view.title?.takeIf { it.isNotBlank() } ?: url
