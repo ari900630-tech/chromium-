@@ -129,8 +129,7 @@ class MainActivity : Activity() {
                 val target = request.url
                 val scheme = target.scheme?.lowercase()
                 if (scheme == "http" || scheme == "https") {
-                    view.loadUrl(target.toString())
-                    return true
+                    return false
                 }
                 if (scheme == "mailto" || scheme == "tel") {
                     try {
@@ -148,8 +147,7 @@ class MainActivity : Activity() {
                 val target = Uri.parse(url)
                 val scheme = target.scheme?.lowercase()
                 if (scheme == "http" || scheme == "https") {
-                    view.loadUrl(url)
-                    return true
+                    return false
                 }
                 if (scheme == "mailto" || scheme == "tel") {
                     try {
