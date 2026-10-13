@@ -14,10 +14,10 @@ header{height:60px;background:var(--surface);border-bottom:1px solid var(--line)
 main{max-width:1100px;margin:28px auto;padding:0 16px}.intro{text-align:center;margin:0 auto 22px}.intro h1{font-size:clamp(24px,4vw,36px);margin:0 0 8px}.intro p{color:var(--muted);margin:0;line-height:1.7}
 .device{max-width:900px;margin:auto;border:1px solid #d8e0ec;border-radius:22px;background:var(--surface);overflow:hidden;box-shadow:var(--shadow)}
 .topbar{padding:12px;background:#f8faff;border-bottom:1px solid var(--line)}
-.navrow{display:flex;align-items:center;gap:7px}
+.navrow{display:flex;align-items:center;gap:7px;direction:ltr}
 button{font:inherit;border:0;cursor:pointer;display:grid;place-items:center;flex-shrink:0}
 .tool{width:38px;height:38px;border-radius:12px;background:#fff;color:#344054;border:1px solid var(--line);font-size:19px}
-.tool:hover{background:#edf4ff;color:var(--blue)}.home{color:var(--blue);font-size:23px}
+.tool:hover{background:#edf4ff;color:var(--blue)}.home{color:var(--blue);font-size:23px}.tabscreen{width:100%;max-width:680px;margin:0 auto}.tabshead{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.tabshead h2{margin:0;font-size:22px}.newtabbtn{background:var(--blue);color:#fff;border-radius:22px;padding:10px 15px}.tabgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.tabcard{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 3px 12px #14294b0b;cursor:pointer}.tabpreview{height:115px;background:linear-gradient(#fff,#edf4ff);display:grid;place-items:center;color:var(--blue);font-size:30px}.tabmeta{display:flex;align-items:center;gap:8px;padding:10px 12px}.tabname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}.closeTab{width:30px;height:30px;border-radius:50%;background:#f1f3f4;color:#344054;font-size:20px}
 .address{height:42px;display:flex;align-items:center;gap:8px;flex:1;min-width:0;background:#fff;border:1px solid #d7e1ef;border-radius:22px;padding:0 13px}
 .address span{color:#16a36a}.address input{min-width:0;width:100%;border:0;outline:0;font-size:14px;background:transparent;color:var(--text);direction:ltr;text-align:left}
 .subrow{display:flex;align-items:center;gap:8px;margin-top:10px}.tabcount{background:#fff;border:1px solid var(--line);border-radius:10px;padding:7px 12px;font-size:13px}.grow{flex:1}.tab{font-size:12px;color:var(--muted)}
@@ -35,13 +35,14 @@ button{font:inherit;border:0;cursor:pointer;display:grid;place-items:center;flex
 <section class="device" aria-label="תצוגת דפדפן">
 <div class="topbar">
 <div class="navrow">
-<button class="tool home" title="דף הבית" aria-label="דף הבית" onclick="goHome()">⌂</button>
-<div class="address"><span>●</span><input id="url" value="דף הבית" aria-label="כתובת אתר" onkeydown="if(event.key==='Enter') navigate()"></div>
-<button class="tool" title="רענון" aria-label="רענון" onclick="refreshPage()">↻</button>
-<button class="tool" title="חזרה" aria-label="חזרה" onclick="history.back()">‹</button>
+<button class="tool" title="תפריט" aria-label="תפריט" onclick="showMenu()">⋮</button>
+<button class="tool" title="כרטיסייה חדשה" aria-label="כרטיסייה חדשה" onclick="newTab()">＋</button>
 <button class="tool" title="קדימה" aria-label="קדימה" onclick="history.forward()">›</button>
+<button class="tool" title="חזרה" aria-label="חזרה" onclick="history.back()">‹</button>
+<button class="tool" title="רענון" aria-label="רענון" onclick="refreshPage()">↻</button>
+<div class="address"><span>●</span><input id="url" value="דף הבית" aria-label="כתובת אתר" onkeydown="if(event.key==='Enter') navigate()"></div>
 </div>
-<div class="subrow"><button class="tabcount" id="tabs" onclick="newTab()">▢ &nbsp; 1</button><span class="tab">כרטיסייה</span><span class="grow"></span><button class="tool" title="כרטיסייה חדשה" aria-label="כרטיסייה חדשה" onclick="newTab()">＋</button><button class="tool" title="תפריט" aria-label="תפריט" onclick="showMenu()">⋮</button></div>
+<div class="subrow"><button class="tabcount" id="tabs" onclick="showTabs()">▢ &nbsp; 1</button><span class="tab">כרטיסיות</span><span class="grow"></span></div>
 </div>
 <div class="page" id="page">
 <div class="searchmark">solipsism</div>
@@ -52,13 +53,19 @@ button{font:inherit;border:0;cursor:pointer;display:grid;place-items:center;flex
 <p class="note">חשוב: זו תצוגת אתר של עיצוב הדפדפן, ולא האפליקציה עצמה. אתרים חיצוניים מסוימים עשויים לחסום הצגה בתוך חלון התצוגה.</p>
 </main>
 <script>
-let tabCount=1;
-function goHome(){document.getElementById('url').value='דף הבית';document.getElementById('page').innerHTML='<div class="searchmark">solipsism</div><form class="searchbox" onsubmit="searchFromHome(event)"><input id="search" placeholder="חיפוש באינטרנט או הקלדת כתובת" aria-label="חיפוש באינטרנט"><button type="submit">⌕</button></form><div class="shortcuts"><div class="shortcut"><div>⌕</div>חיפוש</div><div class="shortcut"><div>☆</div>סימניות</div><div class="shortcut"><div>◷</div>היסטוריה</div><div class="shortcut"><div>＋</div>כרטיסייה חדשה</div></div>'}
-function navigate(){let v=document.getElementById('url').value.trim();if(!v)return;if(!/^https?:\/\//i.test(v)&&v.includes('.')&&!v.includes(' '))v='https://'+v;else if(!/^https?:\/\//i.test(v))v='https://duckduckgo.com/?q='+encodeURIComponent(v);document.getElementById('url').value=v;document.getElementById('page').innerHTML='<div style="max-width:620px;text-align:center;margin:auto;line-height:1.8"><div style="font-size:30px;color:#1769e0">↗</div><h2>פתיחת האתר</h2><p>כדי לבדוק את האתר בפועל, פתח אותו בכרטיסייה חדשה.</p><p style="direction:ltr;overflow-wrap:anywhere">'+v+'</p><a href="'+v.replace(/"/g,'&quot;')+'" target="_blank" rel="noopener" style="display:inline-block;background:#1769e0;color:white;text-decoration:none;border-radius:22px;padding:11px 22px">פתח אתר</a><p style="color:#667085;font-size:13px">חלון התצוגה מדגים את ממשק הדפדפן; הוא לא מנוע Chromium מלא.</p></div>'}
+let tabCount=1, activeTab=0;
+let tabItems=[{title:'דף הבית',url:'דף הבית'}];
+function updateTabCount(){document.getElementById('tabs').innerHTML='▢ &nbsp; '+tabItems.length}
+function goHome(){document.getElementById('url').value='דף הבית';document.getElementById('page').innerHTML='<div class="searchmark">solipsism</div><form class="searchbox" onsubmit="searchFromHome(event)"><input id="search" placeholder="חיפוש באינטרנט או הקלדת כתובת" aria-label="חיפוש באינטרנט"><button type="submit">⌕</button></form><div class="shortcuts"><div class="shortcut"><div>⌕</div>חיפוש</div><div class="shortcut"><div>☆</div>סימניות</div><div class="shortcut"><div>◷</div>היסטוריה</div><div class="shortcut" onclick="newTab()"><div>＋</div>כרטיסייה חדשה</div></div>';if(tabItems[activeTab]){tabItems[activeTab].title='דף הבית';tabItems[activeTab].url='דף הבית'}}
+function navigate(){let v=document.getElementById('url').value.trim();if(!v)return;if(!/^https?:\/\//i.test(v)&&v.includes('.')&&!v.includes(' '))v='https://'+v;else if(!/^https?:\/\//i.test(v))v='https://duckduckgo.com/?q='+encodeURIComponent(v);document.getElementById('url').value=v;if(tabItems[activeTab]){tabItems[activeTab].title=v;tabItems[activeTab].url=v}document.getElementById('page').innerHTML='<div style="max-width:620px;text-align:center;margin:auto;line-height:1.8"><div style="font-size:30px;color:#1769e0">↗</div><h2>פתיחת האתר</h2><p>כדי לבדוק את האתר בפועל, פתח אותו בכרטיסייה חדשה.</p><p style="direction:ltr;overflow-wrap:anywhere">'+v+'</p><a href="'+v.replace(/"/g,'&quot;')+'" target="_blank" rel="noopener" style="display:inline-block;background:#1769e0;color:white;text-decoration:none;border-radius:22px;padding:11px 22px">פתח אתר</a><p style="color:#667085;font-size:13px">חלון התצוגה מדגים את ממשק הדפדפן; הוא לא מנוע Chromium מלא.</p></div>'}
 function searchFromHome(e){e.preventDefault();const q=document.getElementById('search').value.trim();if(q){document.getElementById('url').value=q;navigate()}}
 function refreshPage(){const v=document.getElementById('url').value;if(v==='דף הבית')goHome();else navigate()}
-function newTab(){tabCount++;document.getElementById('tabs').innerHTML='▢ &nbsp; '+tabCount;goHome()}
-function showMenu(){alert('תפריט הדגמה\n\nסימניות\nהיסטוריה\nהגדרות\n\nבגרסת האפליקציה הפעולות מחוברות לממשק Android.')}
+function newTab(){tabItems.push({title:'דף הבית',url:'דף הבית'});activeTab=tabItems.length-1;updateTabCount();goHome();showTabs()}
+function showTabs(){const page=document.getElementById('page');page.innerHTML='<div class="tabscreen"><div class="tabshead"><h2>כרטיסיות פתוחות</h2><button class="newtabbtn" onclick="newTab()">＋ כרטיסייה חדשה</button></div><div class="tabgrid">'+tabItems.map((t,i)=>'<div class="tabcard"><div class="tabpreview" onclick="selectTab('+i+')">🌐</div><div class="tabmeta"><span class="tabname" onclick="selectTab('+i+')">'+(i+1)+'. '+escapeText(t.title)+'</span><button class="closeTab" aria-label="סגור כרטיסייה" onclick="closeTab(event,'+i+')">×</button></div></div>').join('')+'</div></div>';updateTabCount()}
+function selectTab(i){activeTab=i;document.getElementById('url').value=tabItems[i].url; if(tabItems[i].url==='דף הבית')goHome();else navigate()}
+function closeTab(e,i){e.stopPropagation();if(tabItems.length===1){tabItems[0]={title:'דף הבית',url:'דף הבית'};activeTab=0;goHome()}else{tabItems.splice(i,1);if(activeTab>=tabItems.length)activeTab=tabItems.length-1;showTabs()}updateTabCount()}
+function escapeText(s){return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
+function showMenu(){alert('תפריט הדגמה\n\nהיסטוריה\nסימניות\nהגדרות\n\nבגרסת האפליקציה הפעולות מחוברות לממשק Android.')}
 </script>
 </body>
 </html>
