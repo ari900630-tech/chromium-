@@ -71,8 +71,6 @@ class MainActivity : Activity() {
         nav.layoutDirection = View.LAYOUT_DIRECTION_LTR
         nav.addView(button("⋮") { showMenu() }, LinearLayout.LayoutParams(dp(40), dp(42)))
         nav.addView(button("+") { addTab("https://duckduckgo.com"); showTabs() }, LinearLayout.LayoutParams(dp(40), dp(42)))
-        nav.addView(button("›") { if (web.canGoForward()) web.goForward() }, LinearLayout.LayoutParams(dp(36), dp(42)))
-        nav.addView(button("‹") { if (web.canGoBack()) web.goBack() }, LinearLayout.LayoutParams(dp(36), dp(42)))
         nav.addView(button("↻") { web.reload() }, LinearLayout.LayoutParams(dp(36), dp(42)))
         address = EditText(this).apply {
             textSize = 14f; isSingleLine = true; hint = "חיפוש או הקלדת כתובת"
@@ -198,45 +196,59 @@ class MainActivity : Activity() {
     }
 
     private fun showTabs() {
+        // Chrome-like tab switcher: neutral canvas, compact header, and 2-column tab cards.
+        val canvas = Color.rgb(241, 243, 244)
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(12), dp(16), dp(12))
-            setBackgroundColor(Color.rgb(241, 243, 244))
+            setPadding(dp(16), dp(10), dp(16), dp(12))
+            setBackgroundColor(canvas)
         }
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
         }
         header.addView(TextView(this).apply {
-            text = "כרטיסיות"; textSize = 22f; setTextColor(ink)
-        }, LinearLayout.LayoutParams(0, dp(48), 1f))
-        header.addView(button("+ כרטיסייה חדשה") {
+            text = "כרטיסיות פתוחות"; textSize = 22f; setTextColor(ink)
+        }, LinearLayout.LayoutParams(0, dp(52), 1f))
+        header.addView(button("＋") {
             tabsDialog?.dismiss()
             addTab("https://duckduckgo.com")
             showTabs()
         }.apply {
-            textSize = 14f; setTextColor(blue)
-        }, LinearLayout.LayoutParams(-2, dp(48)))
+            textSize = 25f; setTextColor(blue)
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(Color.WHITE); cornerRadius = dp(24).toFloat()
+            }
+        }, LinearLayout.LayoutParams(dp(44), dp(44)))
         panel.addView(header)
         val scroll = android.widget.ScrollView(this)
-        val cards = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        val grid = android.widget.GridLayout(this).apply {
+            columnCount = 2
+            useDefaultMargins = false
+        }
+        val available = resources.displayMetrics.widthPixels - dp(44)
+        val cardWidth = (available / 2).coerceAtLeast(dp(120))
         tabs.forEachIndexed { index, view ->
             val card = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
-                setPadding(dp(14), dp(10), dp(14), dp(10))
                 background = android.graphics.drawable.GradientDrawable().apply {
                     setColor(Color.WHITE)
                     setStroke(dp(1), if (index == activeTab) blue else Color.rgb(218, 220, 224))
-                    cornerRadius = dp(16).toFloat()
+                    cornerRadius = dp(14).toFloat()
                 }
-                setOnClickListener { switchTab(index); tabsDialog?.dismiss() }
+                clipToOutline = true
             }
-            val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-            top.addView(TextView(this).apply {
-                text = (view.title?.takeIf { it.isNotBlank() } ?: tabUrls.getOrElse(index) { "כרטיסייה חדשה" })
-                textSize = 15f; setTextColor(ink); maxLines = 1
-            }, LinearLayout.LayoutParams(0, dp(38), 1f))
-            top.addView(button("×") {
+            val cardHeader = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(dp(8), dp(4), dp(6), dp(4))
+            }
+            cardHeader.addView(TextView(this).apply {
+                text = view.title?.takeIf { it.isNotBlank() } ?: "דף חדש"
+                textSize = 12f; setTextColor(ink); maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
+            }, LinearLayout.LayoutParams(0, dp(32), 1f))
+            cardHeader.addView(button("×") {
                 if (tabs.size > 1) {
                     val wasActive = index == activeTab
                     view.stopLoading(); view.destroy()
@@ -250,20 +262,52 @@ class MainActivity : Activity() {
                     view.loadUrl("https://duckduckgo.com")
                     tabsDialog?.dismiss()
                 }
-            }, LinearLayout.LayoutParams(dp(40), dp(38)))
-            card.addView(top)
-            card.addView(TextView(this).apply {
-                text = tabUrls.getOrElse(index) { view.url ?: "" }
-                textSize = 12f; setTextColor(Color.GRAY); maxLines = 1
-                setPadding(0, dp(3), 0, dp(3))
-            })
-            cards.addView(card, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
+            }.apply {
+                textSize = 19f
+                setPadding(0, 0, 0, 0)
+            }, LinearLayout.LayoutParams(dp(30), dp(32)))
+            card.addView(cardHeader)
+            val preview = FrameLayout(this).apply {
+                setBackgroundColor(Color.rgb(248, 250, 253))
+                setOnClickListener { switchTab(index); tabsDialog?.dismiss() }
+            }
+            val previewLabel = TextView(this).apply {
+                text = "🌐"
+                textSize = 30f
+                gravity = Gravity.CENTER
+                setTextColor(blue)
+            }
+            preview.addView(previewLabel, FrameLayout.LayoutParams(-1, -1))
+            card.addView(preview, LinearLayout.LayoutParams(-1, dp(108)))
+            card.setOnClickListener { switchTab(index); tabsDialog?.dismiss() }
+            val params = android.widget.GridLayout.LayoutParams().apply {
+                width = cardWidth
+                height = dp(154)
+                setMargins(dp(4), dp(5), dp(4), dp(9))
+            }
+            grid.addView(card, params)
         }
-        scroll.addView(cards)
+        scroll.addView(grid)
         panel.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        val bottom = LinearLayout(this).apply {
+            gravity = Gravity.CENTER
+            setPadding(0, dp(8), 0, 0)
+        }
+        bottom.addView(button("＋ כרטיסייה חדשה") {
+            tabsDialog?.dismiss()
+            addTab("https://duckduckgo.com")
+            showTabs()
+        }.apply {
+            textSize = 14f; setTextColor(Color.WHITE)
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(blue); cornerRadius = dp(24).toFloat()
+            }
+        }, LinearLayout.LayoutParams(-1, dp(46)))
+        panel.addView(bottom)
         tabsDialog = AlertDialog.Builder(this).setView(panel).create()
+        tabsDialog?.window?.setBackgroundDrawableResource(android.R.color.transparent)
         tabsDialog?.show()
-        tabsDialog?.window?.setLayout(-1, (resources.displayMetrics.heightPixels * 0.85f).toInt())
+        tabsDialog?.window?.setLayout(-1, (resources.displayMetrics.heightPixels * 0.88f).toInt())
     }
 
     private fun showHistory() {
